@@ -432,18 +432,21 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
 
   // Load instance functions.
 
-#define XE_UI_VULKAN_FUNCTION(name)                                                            \
-  functions_loaded &=                                                                          \
-      (ifn.name = PFN_##name(ifn.vkGetInstanceProcAddr(vulkan_instance->instance_, #name))) != \
-      nullptr;
+#define XE_UI_VULKAN_FUNCTION(name) \
+  if ((ifn.name = PFN_##name(ifn.vkGetInstanceProcAddr(vulkan_instance->instance_, #name))) == nullptr) { \
+    REXLOG_ERROR("Vulkan instance function {} is not available", #name); \
+    functions_loaded = false; \
+  }
 
   // Vulkan 1.0.
 #include <rex/ui/vulkan/functions/instance_1_0.inc>
 
   // Extensions promoted to a Vulkan version supported by the instance.
-#define XE_UI_VULKAN_FUNCTION_PROMOTED(extension_name, core_name)                 \
-  functions_loaded &= (ifn.core_name = PFN_##core_name(ifn.vkGetInstanceProcAddr( \
-                           vulkan_instance->instance_, #core_name))) != nullptr;
+#define XE_UI_VULKAN_FUNCTION_PROMOTED(extension_name, core_name) \
+  if ((ifn.core_name = PFN_##core_name(ifn.vkGetInstanceProcAddr(vulkan_instance->instance_, #core_name))) == nullptr) { \
+    REXLOG_ERROR("Vulkan instance function {} is not available", #core_name); \
+    functions_loaded = false; \
+  }
   if (vulkan_instance->api_version_ >= VK_MAKE_API_VERSION(0, 1, 1, 0)) {
 #include <rex/ui/vulkan/functions/instance_1_1_khr_get_physical_device_properties2.inc>
   }
@@ -451,9 +454,11 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
 
   // Non-promoted extensions, and extensions promoted to a Vulkan version not
   // supported by the instance.
-#define XE_UI_VULKAN_FUNCTION_PROMOTED(extension_name, core_name)                 \
-  functions_loaded &= (ifn.core_name = PFN_##core_name(ifn.vkGetInstanceProcAddr( \
-                           vulkan_instance->instance_, #extension_name))) != nullptr;
+#define XE_UI_VULKAN_FUNCTION_PROMOTED(extension_name, core_name) \
+  if ((ifn.core_name = PFN_##core_name(ifn.vkGetInstanceProcAddr(vulkan_instance->instance_, #extension_name))) == nullptr) { \
+    REXLOG_ERROR("Vulkan instance function {} is not available", #extension_name); \
+    functions_loaded = false; \
+  }
   if (vulkan_instance->api_version_ < VK_MAKE_API_VERSION(0, 1, 1, 0)) {
     if (vulkan_instance->extensions_.ext_1_1_KHR_get_physical_device_properties2) {
 #include <rex/ui/vulkan/functions/instance_1_1_khr_get_physical_device_properties2.inc>
