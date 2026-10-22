@@ -29,10 +29,10 @@ jobs:
         with:
           packages: 'platform-tools'
 
-      - name: Install Android SDK and NDK
+      - name: Install Android SDK, NDK and CMake
         run: |
           yes | sdkmanager --licenses
-          sdkmanager --install "platforms;android-35" "ndk;28.2.13676358"
+          sdkmanager --install "platforms;android-35" "ndk;28.2.13676358" "cmake;3.30.5"
 
       - name: Build release APK
         working-directory: android
